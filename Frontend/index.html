@@ -791,6 +791,8 @@
         window.onclick = (event) => {
           if (event.target === studentModal) closeModal();
           if (event.target === courseModal) closeCourseModal();
+          if (event.target === document.getElementById("deleteConfirmationModal"))
+            closeDeleteModal();
         };
       }
 
@@ -813,8 +815,7 @@
 
           await Promise.all([loadStudents(), updateDashboardStats()]);
         } catch (error) {
-          console.error("Error during initialization:", error);
-          showNotification("Error initializing application", "error");
+          handleError(error, "Error initializing application");
         } finally {
           hideLoading();
         }
@@ -868,8 +869,7 @@
             ".card:nth-child(4) .card-value"
           ).textContent = `${stats.successRate}%`;
         } catch (error) {
-          console.error("Error updating dashboard stats:", error);
-          showNotification("Error updating statistics", "error");
+          handleError(error, "Error updating statistics");
         }
       }
 
@@ -881,8 +881,7 @@
           students = await response.json();
           renderStudentTables(students);
         } catch (error) {
-          console.error("Error loading students:", error);
-          showNotification("Error loading students", "error");
+          handleError(error, "Error loading students");
           students = [];
           renderStudentTables([]);
         }
@@ -898,8 +897,7 @@
           renderCourseTable(courses);
           return courses;
         } catch (error) {
-          console.error("Error loading courses:", error);
-          showNotification("Error loading courses", "error");
+          handleError(error, "Error loading courses");
           courses = [];
           renderCourseTable([]);
         }
@@ -939,8 +937,7 @@
       async function deleteStudent(id) {
         deleteType = "student";
         deleteId = id;
-        document.getElementById("deleteConfirmationModal").style.display =
-          "flex";
+        document.getElementById("deleteConfirmationModal").style.display = "flex";
       }
 
       // CRUD Operations for Courses
@@ -977,13 +974,11 @@
       async function deleteCourse(id) {
         deleteType = "course";
         deleteId = id;
-        document.getElementById("deleteConfirmationModal").style.display =
-          "flex";
+        document.getElementById("deleteConfirmationModal").style.display = "flex";
       }
 
       function closeDeleteModal() {
-        document.getElementById("deleteConfirmationModal").style.display =
-          "none";
+        document.getElementById("deleteConfirmationModal").style.display = "none";
         deleteType = "";
         deleteId = null;
       }
@@ -1024,8 +1019,7 @@
             await updateDashboardStats();
           }
         } catch (error) {
-          console.error("Error during deletion:", error);
-          showNotification(error.message || "Error during deletion", "error");
+          handleError(error, "Error during deletion");
         } finally {
           hideLoading();
           closeDeleteModal();
@@ -1057,8 +1051,7 @@
           await loadStudents();
           await updateDashboardStats();
         } catch (error) {
-          console.error("Error:", error);
-          showNotification("Error saving student data", "error");
+          handleError(error, "Error saving student data");
         } finally {
           hideLoading();
         }
@@ -1070,9 +1063,7 @@
 
         const courseData = {
           name: document.getElementById("courseName").value.trim(),
-          description: document
-            .getElementById("courseDescription")
-            .value.trim(),
+          description: document.getElementById("courseDescription").value.trim(),
           duration: parseInt(document.getElementById("courseDuration").value),
           status: document.getElementById("courseStatus").value,
         };
@@ -1089,8 +1080,7 @@
           await loadCourses();
           await updateDashboardStats();
         } catch (error) {
-          console.error("Error:", error);
-          showNotification("Error saving course data", "error");
+          handleError(error, "Error saving course data");
         } finally {
           hideLoading();
         }
@@ -1271,11 +1261,7 @@
 
           studentModal.style.display = "flex";
         } catch (error) {
-          console.error("Error loading student for edit:", error);
-          showNotification(
-            error.message || "Error loading student data",
-            "error"
-          );
+          handleError(error, "Error loading student data");
         } finally {
           hideLoading();
         }
@@ -1294,8 +1280,7 @@
           const course = await response.json();
 
           editingCourseId = id;
-          document.getElementById("courseModalTitle").textContent =
-            "Edit Course";
+          document.getElementById("courseModalTitle").textContent = "Edit Course";
           document.getElementById("courseName").value = course.name;
           document.getElementById("courseDescription").value =
             course.description;
@@ -1304,11 +1289,7 @@
 
           courseModal.style.display = "flex";
         } catch (error) {
-          console.error("Error loading course for edit:", error);
-          showNotification(
-            error.message || "Error loading course data",
-            "error"
-          );
+          handleError(error, "Error loading course data");
         } finally {
           hideLoading();
         }
@@ -1338,8 +1319,7 @@
             const filteredStudents = await response.json();
             renderStudentTables(filteredStudents);
           } catch (error) {
-            console.error("Error searching students:", error);
-            showNotification("Error searching students", "error");
+            handleError(error, "Error searching students");
           } finally {
             hideLoading();
           }
