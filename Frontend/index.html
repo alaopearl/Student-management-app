@@ -704,6 +704,19 @@
     </div>
 
     <!-- Student Modal -->
+    <!-- Profile Modal -->
+    <div class="modal" id="profileModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Profile Photo</h2>
+          <button class="close-btn" onclick="closeProfileModal()">&times;</button>
+        </div>
+        <div class="modal-body" style="text-align:center;">
+          <img id="profileModalImg" src="" alt="Profile" style="max-width:320px;max-height:80vh;border-radius:8px;" />
+        </div>
+      </div>
+    </div>
+
     <div class="modal" id="studentModal">
       <div class="modal-content">
         <div class="modal-header">
@@ -824,6 +837,12 @@
       const courseTableBody = document.getElementById("courseTableBody");
       const studentModal = document.getElementById("studentModal");
       const courseModal = document.getElementById("courseModal");
+      const profileModal = document.getElementById("profileModal");
+      // Open profile modal when clicking the avatar in the header
+      document.querySelector('.user-avatar')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        openProfileModal();
+      });
       const studentForm = document.getElementById("studentForm");
       const courseForm = document.getElementById("courseForm");
       const searchInput = document.querySelector(".search-bar input");
@@ -1308,6 +1327,17 @@
         courseForm.reset();
       }
 
+      // Profile modal handlers
+      function openProfileModal() {
+        const src = document.getElementById('userPhoto')?.src || '';
+        document.getElementById('profileModalImg').src = src;
+        profileModal.style.display = 'flex';
+      }
+
+      function closeProfileModal() {
+        profileModal.style.display = 'none';
+      }
+
       // Update the editStudent function
       async function editStudent(id) {
         showLoading();
@@ -1464,6 +1494,7 @@
         if (event.target === courseModal) closeCourseModal();
         if (event.target === document.getElementById("deleteConfirmationModal"))
           closeDeleteModal();
+        if (event.target === profileModal) closeProfileModal();
       };
 
       // Reports and Settings functions
