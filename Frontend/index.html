@@ -628,12 +628,70 @@
 
         <!-- Reports Section -->
         <div id="reportsSection" class="section">
-          <h2>Reports Coming Soon</h2>
+          <h2>Reports</h2>
+          <div class="card">
+            <h3>Submit Report</h3>
+            <form id="reportForm">
+              <div class="form-group">
+                <label for="reporterId">Your User ID</label>
+                <input type="text" id="reporterId" required />
+              </div>
+              <div class="form-group">
+                <label for="targetId">Target User ID (optional)</label>
+                <input type="text" id="targetId" />
+              </div>
+              <div class="form-group">
+                <label for="reason">Reason</label>
+                <select id="reason" required>
+                  <option value="spam">Spam</option>
+                  <option value="abuse">Abuse</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="details">Details</label>
+                <textarea id="details" rows="3"></textarea>
+              </div>
+              <button type="submit" class="submit-btn">Submit Report</button>
+            </form>
+          </div>
+
+          <div class="card" style="margin-top:16px">
+            <h3>Recent Reports</h3>
+            <div id="reportList">Loading...</div>
+          </div>
         </div>
 
         <!-- Settings Section -->
         <div id="settingsSection" class="section">
-          <h2>Settings Coming Soon</h2>
+          <h2>Settings</h2>
+          <div class="card">
+            <h3>User Settings</h3>
+            <form id="settingsForm">
+              <div class="form-group">
+                <label for="settingsUserId">User ID</label>
+                <input type="text" id="settingsUserId" required />
+              </div>
+              <div class="form-group">
+                <label for="userName">Name</label>
+                <input type="text" id="userName" />
+              </div>
+              <div class="form-group">
+                <label for="userBio">Bio</label>
+                <textarea id="userBio" rows="3"></textarea>
+              </div>
+              <button type="submit" class="submit-btn">Save Bio</button>
+            </form>
+
+            <h3 style="margin-top:16px">Profile Photo</h3>
+            <div>
+              <img id="userPhoto" src="" alt="Profile" style="max-width:120px;display:block;margin-bottom:8px"/>
+              <form id="photoForm">
+                <input type="file" id="photoInput" accept="image/*" />
+                <button type="submit" class="submit-btn">Upload Photo</button>
+              </form>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -743,7 +801,7 @@
     </div>
 
     <script>
-      const API_BASE_URL = "http://localhost:3000";
+      const API_BASE_URL = window.location.origin.startsWith("http") ? window.location.origin : "http://localhost:3000";
       let students = [];
       let courses = [];
       let currentSection = "dashboard";
@@ -847,6 +905,11 @@
         } else if (section === "students" || section === "dashboard") {
           loadStudents();
           updateDashboardStats();
+        } else if (section === "reports") {
+          loadReports();
+        } else if (section === "settings") {
+          // focus user id input for quick access
+          document.getElementById('settingsUserId').focus();
         }
       }
 
@@ -1395,6 +1458,81 @@
         if (event.target === document.getElementById("deleteConfirmationModal"))
           closeDeleteModal();
       };
+
+      // Reports and Settings functions
+      async function loadReports() {
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/reports`);
+          if (!res.ok) throw new Error('Failed to load reports');
+          const reports = await res.json();
+          const container = document.getElementById('reportList');
+          if (!reports.length) container.innerHTML = '<p>No reports</p>';
+          else {
+            container.innerHTML = '<ul>' + reports.map(r => `
+              <li><strong>${escapeHtml(r.reason)}</strong> by ${escapeHtml(r.reporterId?.name||r.reporterId)}<br/>${escapeHtml(r.details||'')}</li>`).join('') + '</ul>';
+          }
+        } catch (err) { handleError(err, 'Error loading reports'); }
+      }
+
+      document.getElementById('reportForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+          reporterId: document.getElementById('reporterId').value.trim(),
+          targetId: document.getElementById('targetId').value.trim() || undefined,
+          reason: document.getElementById('reason').value,
+          details: document.getElementById('details').value.trim()
+        };
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/reports`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+          if (!res.ok) throw new Error('Failed to submit report');
+          showNotification('Report submitted', 'success');
+          e.target.reset();
+          loadReports();
+        } catch (err) { handleError(err, 'Error submitting report'); }
+      });
+
+      async function loadUserSettings() {
+        const id = document.getElementById('settingsUserId').value.trim();
+        if (!id) return;
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/users/${id}/settings`);
+          if (!res.ok) throw new Error('Failed to load user');
+          const data = await res.json();
+          document.getElementById('userName').value = data.name || '';
+          document.getElementById('userBio').value = data.bio || '';
+          document.getElementById('userPhoto').src = data.profilePhoto || '';
+        } catch (err) { handleError(err, 'Error loading user settings'); }
+      }
+
+      document.getElementById('settingsForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('settingsUserId').value.trim();
+        if (!id) return showNotification('Enter user id', 'warning');
+        const payload = { name: document.getElementById('userName').value.trim(), bio: document.getElementById('userBio').value.trim() };
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/users/${id}/bio`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+          if (!res.ok) throw new Error('Failed to save bio');
+          showNotification('Profile updated', 'success');
+          loadUserSettings();
+        } catch (err) { handleError(err, 'Error saving bio'); }
+      });
+
+      document.getElementById('photoForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('settingsUserId').value.trim();
+        if (!id) return showNotification('Enter user id', 'warning');
+        const file = document.getElementById('photoInput').files[0];
+        if (!file) return showNotification('Choose a file', 'warning');
+        const fd = new FormData(); fd.append('photo', file);
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/users/${id}/profile-photo`, { method: 'POST', body: fd });
+          if (!res.ok) throw new Error('Failed to upload photo');
+          const data = await res.json();
+          document.getElementById('userPhoto').src = data.profilePhoto;
+          showNotification('Photo uploaded', 'success');
+        } catch (err) { handleError(err, 'Error uploading photo'); }
+      });
+
     </script>
   </body>
 </html>
